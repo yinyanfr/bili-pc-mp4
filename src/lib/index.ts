@@ -1,5 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import ffmpeg from 'fluent-ffmpeg';
 
 /**
  * Represents the structure of a task.
@@ -56,4 +57,21 @@ export async function analyseFolder(dirPath: string): Promise<Task[]> {
     const taskAnalysers = ls.map(e => analyseTask(join(dirPath, e)));
     return Promise.all(taskAnalysers);
   }
+}
+
+export function combineVideos(videoFiles: string[], outputPath: string) {
+  const ffmpegObj = ffmpeg().audioCodec('copy').videoCodec('copy');
+  videoFiles.forEach(e => {
+    ffmpegObj.input(e);
+  });
+  return new Promise((resolve, reject) => {
+    ffmpegObj
+      .on('error', function (err) {
+        reject(err.message);
+      })
+      .on('end', function () {
+        resolve(outputPath);
+      })
+      .mergeToFile(outputPath, './tmp');
+  });
 }
