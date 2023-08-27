@@ -1,0 +1,42 @@
+{
+  "name": "bili-pc-mp4",
+  "version": "0.0.1",
+  "description": "MP4 convertor for videos downloaded by the Bilibili pc application.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint --ext .ts,.tsx ./src",
+    "build": "npm run lint && tsc",
+    "clean": "rm -rf dist/",
+    "prepublishOnly": "tsc",
+    "lint-staged": "lint-staged",
+    "prepare": "husky install"
+  },
+  "keywords": [],
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yinyanfr/bili-pc-mp4.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yinyanfr/bili-pc-mp4/issues"
+  },
+  "homepage": "https://github.com/yinyanfr/bili-pc-mp4#readme",
+  "license": "MIT",
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.6",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^9.0.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.2",
+    "typescript": "^5.2.2"
+  }
+}
