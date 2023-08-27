@@ -41,6 +41,8 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "fluent-ffmpeg": "^2.1.2"
+    "fluent-ffmpeg": "^2.1.2",
+    "ora": "^5.4.1",
+    "sanitize-filename": "^1.6.3"
   }
 }
