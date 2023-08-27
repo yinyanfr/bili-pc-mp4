@@ -95,5 +95,8 @@
   "exclude": [
     "node_modules",
     "src/tests"
-  ]
+  ],
+  "ts-node": {
+    "files": true
+  }
 }
