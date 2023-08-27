@@ -1,5 +1,7 @@
+import { createReadStream, createWriteStream } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { Transform } from 'node:stream';
 
 /**
  * Represents the structure of a task.
@@ -56,4 +58,41 @@ export async function analyseFolder(dirPath: string): Promise<Task[]> {
     const taskAnalysers = ls.map(e => analyseTask(join(dirPath, e)));
     return Promise.all(taskAnalysers);
   }
+}
+
+/**
+ * Decrypts a file and writes the decrypted content to an output file.
+ * @param {string} filePath - The path of the file to decrypt.
+ * @param {string} outputPath - The path to write the decrypted content.
+ * @returns {Promise<string>} A promise that resolves with the path of the output file.
+ */
+export function decriptFile(filePath: string, outputPath: string) {
+  const readStream = createReadStream(filePath, { highWaterMark: 1024 * 20 }); // Read 20MB at a time
+  const writeStream = createWriteStream(outputPath);
+
+  let isFirstChunk = true;
+
+  const hexDataTransformer = new Transform({
+    transform(chunk, _, callback) {
+      if (isFirstChunk) {
+        isFirstChunk = false;
+        this.push(chunk.slice(9));
+      } else {
+        this.push(chunk);
+      }
+      callback();
+    },
+  });
+
+  readStream.pipe(hexDataTransformer).pipe(writeStream);
+
+  return new Promise((resolve, reject) => {
+    writeStream.on('finish', () => {
+      resolve(outputPath);
+    });
+
+    writeStream.on('error', err => {
+      reject(err);
+    });
+  });
 }
