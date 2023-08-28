@@ -1,7 +1,7 @@
-import { createReadStream, createWriteStream } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { readFile, readdir, rm, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import ffmpeg from 'fluent-ffmpeg';
+import { ffmpeg } from 'eloquent-ffmpeg';
 import { Transform } from 'node:stream';
 import { createFolder } from '../lib';
 import sanitize from 'sanitize-filename';
@@ -14,6 +14,7 @@ import ora from 'ora';
  * @property {string} title - The title of the task.
  * @property {number} p - The priority of the task.
  * @property {string} uname - The username associated with the task.
+ * @property {string} status - The status of the task.
  * @property {string[]} videoFiles - An array of video file names.
  * @property {string[]} danmuFiles - An array of danmu file names.
  * @property {string[]} dirPath - The path to the folder.
@@ -24,6 +25,7 @@ interface Task {
   title?: string;
   p?: number;
   uname?: string;
+  status?: 'completed' | string;
   videoFiles: string[];
   danmuFiles: string[];
   dirPath: string;
@@ -79,13 +81,14 @@ async function analyseTask(taskPath: string): Promise<Task> {
   try {
     const videoInfoReader = await readFile(join(taskPath, '.videoInfo'));
     const videoInfo: VideoInfo = JSON.parse(videoInfoReader.toString());
-    const { groupTitle, title, p, uname } = videoInfo;
+    const { groupTitle, title, p, uname, status } = videoInfo;
     return {
       id,
       groupTitle,
       title,
       p,
       uname,
+      status,
       videoFiles,
       danmuFiles,
       dirPath: taskPath,
@@ -93,6 +96,7 @@ async function analyseTask(taskPath: string): Promise<Task> {
   } catch {
     return {
       id,
+      status: 'completed',
       videoFiles,
       danmuFiles,
       dirPath: taskPath,
@@ -120,23 +124,19 @@ async function analyseFolder(dirPath: string): Promise<Task[]> {
 }
 
 /**
- * Decrypts a file and writes the decrypted content to an output file.
- * @param {string} filePath - The path of the file to decrypt.
- * @param {string} outputPath - The path to write the decrypted content.
- * @param {number} [bufferSize] - The size of the buffer used during decryption.
- * @returns {Promise<string>} A promise that resolves with the path of the output file.
+ * Creates a decrypted buffer from a file.
+ * @param {string} filePath - The path to the file to be decrypted.
+ * @param {number} [bufferSize=65536] - The size of the buffer for reading the file.
+ * @returns {ReadStream} A readable stream containing the decrypted file content.
  */
-function decriptFile(
-  filePath: string,
-  outputPath: string,
-  bufferSize: number = 1024 * 20,
-) {
-  const readStream = createReadStream(filePath, { highWaterMark: bufferSize }); // Read 20MB at a time
-  const writeStream = createWriteStream(outputPath);
-
+function decryptedBuffer(filePath: string, bufferSize = 1024 * 64) {
+  const readStream = createReadStream(filePath, { highWaterMark: bufferSize });
   let isFirstChunk = true;
 
-  const hexDataTransformer = new Transform({
+  /**
+   * Bilibili adds 9 bytes of trash data in the downloaded files
+   */
+  const decryption = new Transform({
     transform(chunk, _, callback) {
       if (isFirstChunk) {
         isFirstChunk = false;
@@ -148,43 +148,34 @@ function decriptFile(
     },
   });
 
-  readStream.pipe(hexDataTransformer).pipe(writeStream);
-
-  return new Promise((resolve, reject) => {
-    writeStream.on('finish', () => {
-      resolve(outputPath);
-    });
-
-    writeStream.on('error', err => {
-      reject(err);
-    });
-  });
+  return readStream.pipe(decryption);
 }
 
 /**
- * Combines multiple video files into a single output video file.
- * @param {string[]} videoFiles - An array of paths to input video files.
- * @param {string} outputPath - The path where the combined video will be saved.
- * @returns {Promise<string>} A promise that resolves with the path of the output video file.
+ * Processes video files by combining and saving them into an output video.
+ * @param {string[]} videoFiles - An array of paths to video files.
+ * @param {string} outputPath - The path where the output video will be saved.
+ * @param {TaskOptions} options - Options for processing the video.
+ * @throws {Error} Throws an error if no video files are provided.
+ * @returns {Promise<void>} A promise that resolves when the video processing is complete.
  */
-async function combineVideos(videoFiles: string[], outputPath: string) {
-  // const FFMpegTmpDir = join(TMPDIR, 'ffmpeg');
-  // await createFolder(FFMpegTmpDir);
-  const ffmpegObj = ffmpeg().audioCodec('copy').videoCodec('copy');
+async function processVideo(
+  videoFiles: string[],
+  outputPath: string,
+  options: TaskOptions = {},
+) {
+  if (!videoFiles?.length) {
+    throw new Error('No video files.');
+  }
+
+  const { bufferSize } = options;
+  const ffmpegCmd = ffmpeg({ overwrite: true });
   videoFiles.forEach(e => {
-    ffmpegObj.input(e);
+    ffmpegCmd.input(decryptedBuffer(e, bufferSize));
   });
-  return new Promise((resolve, reject) => {
-    ffmpegObj
-      .on('error', function (err) {
-        reject(err.message);
-      })
-      .on('end', function () {
-        resolve(outputPath);
-      })
-      .output(outputPath)
-      .run();
-  });
+  ffmpegCmd.output(outputPath).audioCodec('copy').videoCodec('copy');
+  const worker = await ffmpegCmd.spawn();
+  await worker.complete();
 }
 
 /**
@@ -195,7 +186,7 @@ async function combineVideos(videoFiles: string[], outputPath: string) {
  */
 async function processTask(task: Task, options: TaskOptions = {}) {
   const { id, groupTitle, title, p, videoFiles, dirPath } = task;
-  const { outputPath = '.', indexedP, silence, bufferSize } = options;
+  const { outputPath = '.', indexedP, silence } = options;
   const spinner = ora();
 
   const outputDirPath = join(
@@ -205,24 +196,15 @@ async function processTask(task: Task, options: TaskOptions = {}) {
   await createFolder(outputDirPath);
 
   if (!silence) {
-    spinner.start(`Decripting ${title ?? id}...`);
-  }
-  const decriptedPath = join(TMPDIR, 'decription', id);
-  await createFolder(decriptedPath);
-  const decrypted: string[] = [];
-  for (const videoPath of videoFiles) {
-    const decriptedFilePath = join(decriptedPath, basename(videoPath));
-    await decriptFile(join(dirPath, videoPath), decriptedFilePath, bufferSize);
-    decrypted.push(decriptedFilePath);
-  }
-
-  if (!silence) {
-    spinner.text = `Combining ${title ?? id}...`;
+    spinner.start(`Decrypting and combining ${title ?? id}...`);
   }
   const filename = `${indexedP ? p : ''}${title ? sanitize(title) : id}.mp4`;
   const outputFilePath = join(outputDirPath, filename);
-  await combineVideos(decrypted, outputFilePath);
-  rm(decriptedPath, { recursive: true, force: true });
+  await processVideo(
+    videoFiles.map(e => join(dirPath, e)),
+    outputFilePath,
+    options,
+  );
 
   if (!silence) {
     spinner.succeed(`Saved ${filename}`);
