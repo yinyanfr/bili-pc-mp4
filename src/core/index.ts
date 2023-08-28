@@ -7,53 +7,6 @@ import { createFolder } from '../lib';
 import sanitize from 'sanitize-filename';
 import ora from 'ora';
 
-/**
- * Represents the structure of a task.
- * @interface Task
- * @property {string} groupTitle - The group title of the task.
- * @property {string} title - The title of the task.
- * @property {number} p - The priority of the task.
- * @property {string} uname - The username associated with the task.
- * @property {string} status - The status of the task.
- * @property {string[]} videoFiles - An array of video file names.
- * @property {string[]} danmuFiles - An array of danmu file names.
- * @property {string[]} dirPath - The path to the folder.
- */
-interface Task {
-  id: string;
-  groupTitle?: string;
-  title?: string;
-  p?: number;
-  uname?: string;
-  status?: 'completed' | string;
-  videoFiles: string[];
-  danmuFiles: string[];
-  dirPath: string;
-}
-
-/**
- * Options for processing a task.
- * @interface TaskOptions
- * @property {string} [outputPath] - The path where the output will be saved.
- * @property {boolean} [indexedP] - Whether to include the indexed priority in the output filename.
- * @property {boolean} [silence] - Whether to suppress console output during processing.
- * @property {boolean} [withDanmu] - Whether to include danmu (WIP: danmu implementation) in the processing.
- * @property {number} [bufferSize] - The size of the buffer used during decryption.
- */
-interface TaskOptions {
-  outputPath?: string;
-  indexedP?: boolean;
-  silence?: boolean;
-  withDanmu?: boolean;
-  bufferSize?: number;
-}
-
-interface TaskOptions {
-  outputPath?: string;
-  indexedP?: boolean;
-  withDanmu?: boolean; // WIP: danmu implementation
-}
-
 const TMPDIR = join(__dirname, '..', 'tmp');
 
 /**
@@ -186,19 +139,16 @@ async function processVideo(
  */
 async function processTask(task: Task, options: TaskOptions = {}) {
   const { id, groupTitle, title, p, videoFiles, dirPath } = task;
-  const { outputPath = '.', indexedP, silence } = options;
+  const { output = '.', pageNumber, silence } = options;
   const spinner = ora();
 
-  const outputDirPath = join(
-    outputPath,
-    groupTitle ? sanitize(groupTitle) : id,
-  );
+  const outputDirPath = join(output, groupTitle ? sanitize(groupTitle) : id);
   await createFolder(outputDirPath);
 
   if (!silence) {
     spinner.start(`Decrypting and combining ${title ?? id}...`);
   }
-  const filename = `${indexedP ? p : ''}${title ? sanitize(title) : id}.mp4`;
+  const filename = `${pageNumber ? p : ''}${title ? sanitize(title) : id}.mp4`;
   const outputFilePath = join(outputDirPath, filename);
   await processVideo(
     videoFiles.map(e => join(dirPath, e)),

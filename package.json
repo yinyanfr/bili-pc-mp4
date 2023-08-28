@@ -2,7 +2,8 @@
   "name": "bili-pc-mp4",
   "version": "0.0.1",
   "description": "MP4 convertor for videos downloaded by the Bilibili pc application.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "bin": "dist/cli/index.js",
   "scripts": {
     "lint": "eslint --ext .ts,.tsx ./src",
     "build": "npm run lint && tsc",
@@ -40,6 +41,8 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@types/args": "^5.0.0",
+    "args": "^5.0.3",
     "eloquent-ffmpeg": "^0.14.0",
     "ora": "^5.4.1",
     "sanitize-filename": "^1.6.3"
