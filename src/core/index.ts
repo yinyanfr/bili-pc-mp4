@@ -82,7 +82,7 @@ async function analyseFolder(dirPath: string): Promise<Task[]> {
  * @param {number} [bufferSize=65536] - The size of the buffer for reading the file.
  * @returns {ReadStream} A readable stream containing the decrypted file content.
  */
-function decryptedBuffer(filePath: string, bufferSize = 1024 * 64) {
+function decryptedBuffer(filePath: string, bufferSize = 64 * 1024) {
   const readStream = createReadStream(filePath, { highWaterMark: bufferSize });
   let isFirstChunk = true;
 

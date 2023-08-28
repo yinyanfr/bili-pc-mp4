@@ -1,6 +1,6 @@
 {
   "name": "bili-pc-mp4",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "MP4 convertor for videos downloaded by the Bilibili pc application.",
   "main": "dist/index.js",
   "bin": "dist/cli/index.js",
@@ -12,7 +12,10 @@
     "lint-staged": "lint-staged",
     "prepare": "husky install"
   },
-  "keywords": [],
+  "keywords": [
+    "bilibili",
+    "bilibili-download"
+  ],
   "author": "",
   "repository": {
     "type": "git",
