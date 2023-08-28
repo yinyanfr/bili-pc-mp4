@@ -230,3 +230,25 @@ export async function processFolder(
     }
   }
 }
+
+export async function listVideos(dirPath: string) {
+  const tasks = await analyseFolder(dirPath);
+
+  console.log('-'.repeat(20));
+  for (const task of tasks) {
+    const info = {
+      id: 'ID',
+      groupTitle: 'Group Title',
+      title: 'Title',
+      p: 'Page',
+      uname: 'Uploader',
+      status: 'Status',
+    };
+    Object.keys(info).forEach(key => {
+      console.log(
+        `${info[key as keyof typeof info]}: ${task[key as keyof Task]}`,
+      );
+    });
+    console.log('-'.repeat(20));
+  }
+}
