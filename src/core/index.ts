@@ -176,7 +176,9 @@ export async function processFolder(
   const tasks = await analyseFolder(dirPath);
   for (const task of tasks) {
     try {
-      await processTask(task, options);
+      if (task.status === 'completed') {
+        await processTask(task, options);
+      }
     } catch (error) {
       console.log(error);
     }
