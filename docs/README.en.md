@@ -7,11 +7,15 @@
 
 [中文文档](../README.md) | English Document
 
+```bash
+npx bili-pc-mp4 ~/Movies/bilibili
+```
+
 `bili-pc-mp4` is a tool for converting videos downloaded from the "Bilibili Desktop Client" (Windows (non-UMP), Mac version) into MP4 format.
 
 Please note that `bili-pc-mp4` is not a downloader, and you need to first use the "Bilibili Desktop Client" to perform "offline caching" of the videos.
 
-`bili-pc-mp4 only` supports videos downloaded using the "Bilibili Desktop Client" and does not support other platform clients.
+`bili-pc-mp4` only supports videos downloaded using the "Bilibili Desktop Client" and does not support other platform clients.
 
 You need to first [install ffmpeg](./ffmpeg.en.md).
 

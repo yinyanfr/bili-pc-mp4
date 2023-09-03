@@ -29,7 +29,9 @@ async function analyseTask(taskPath: string): Promise<Task> {
   }
   const id = basename(taskPath);
   const ls = await readdir(taskPath);
-  const videoFiles = ls.filter(e => e.match(/\.m4s$/));
+  const videoFiles = ls
+    .filter(e => e.match(/\.m4s$/))
+    .filter(e => !e.match(/^\./));
   const danmuFiles = ls.filter(e => e.match(/^dm[0-9]+/));
   try {
     const videoInfoReader = await readFile(join(taskPath, '.videoInfo'));
