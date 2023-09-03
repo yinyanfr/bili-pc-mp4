@@ -5,11 +5,11 @@
 ![size](https://img.shields.io/github/repo-size/yinyanfr/bili-pc-mp4?style=flat-square)
 [![GitHub release](https://img.shields.io/github/release/yinyanfr/bili-pc-mp4.svg?style=flat-square)](https://github.com/yinyanfr/bili-pc-mp4/releases/latest)
 
+中文文档 | [English Document](./docs/README.en.md)
+
 ```bash
 npx bili-pc-mp4 ~/Movies/bilibili
 ```
-
-中文文档 | [English Document](./docs/README.en.md)
 
 `bili-pc-mp4` 是用于将「Bilibili 桌面客户端」(Windows（非 UMP）, Mac 版)下载的视频转换为 MP4 格式的工具。
 
